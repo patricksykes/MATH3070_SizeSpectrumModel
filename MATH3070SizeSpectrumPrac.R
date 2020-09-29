@@ -12,9 +12,7 @@ library(raster)     # For working with rasters
 library(ggplot2)    # For making figures
 library(colorRamps) # for Matlab like colour scheme
 library(RNetCDF)    # For reading/manipulating netCDFs
-# library(maptools)   # For mapping
 library(dplyr)
-# data(wrld_simpl)    # World map
 
 library(rnaturalearth) # install.packages(c("rnaturalearth", "rnaturalearthdata"))
 library(sf) # For simple geographic features
