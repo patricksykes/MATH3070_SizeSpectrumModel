@@ -12,9 +12,13 @@ library(raster)     # For working with rasters
 library(ggplot2)    # For making figures
 library(colorRamps) # for Matlab like colour scheme
 library(RNetCDF)    # For reading/manipulating netCDFs
-library(maptools)   # For mapping
+# library(maptools)   # For mapping
 library(dplyr)
-data(wrld_simpl)    # World map
+# data(wrld_simpl)    # World map
+
+library(rnaturalearth) # install.packages(c("rnaturalearth", "rnaturalearthdata"))
+library(sf) # For simple geographic features
+
 
 #### LOAD AND EXPLORE ENVIRONMENTAL VARIABLES ####
 # cesm_rcp85 is a GCM (General Circulation Model)
@@ -22,18 +26,20 @@ data(wrld_simpl)    # World map
 # The integrated primary production comeS from a biogeochemical model (for nutrients and phytoplankton)
 # forced by the GCM
 
-SST_nc <- open.nc("cesm_rcp85_temp_zs_monthly_200601-210012.nc") # Sea surface temperature (SST)
+SST_nc <- open.nc("cesm_rcp85_temp_zs_annual_200601-210012_remap.nc") # Sea surface temperature (SST)
 print.nc(SST_nc) # Look at metadata and structure of netcdf
 # Time period: Jan 2006 to Dec 2100
 SST <- var.get.nc(SST_nc, 'to')   # Extract SST data from SST_nc and put into an array
+
 dim(SST)                          # Dimensions of array - what do they refer to?
 Lats <- var.get.nc(SST_nc, 'lat') # Extract lats from netcdf
 Lons <- var.get.nc(SST_nc, 'lon') # Extract lons from netcdf
 
+
 # How hot will it get?
 # What is the mean temperature increase in the ocean?
-First10yrs <- 1:(12*10) # First 10 years of monthly netcdf data
-Last10yrs <- (dim(SST)[3] - (12*10)+1):dim(SST)[3]# Last 10 years of netcdf data
+First10yrs <- 1:10 # First 10 years of monthly netcdf data
+Last10yrs <- (dim(SST)[3] - (10)+1):dim(SST)[3]# Last 10 years of netcdf data
 
 MeanSSTnow <- mean(apply(SST[,,First10yrs], 3, mean, na.rm = TRUE)) #
 MeanSSTfuture <- mean(apply(SST[,,Last10yrs], 3, mean, na.rm = TRUE)) #
@@ -45,57 +51,96 @@ MeanSSTfuture - MeanSSTnow
 SSTnow <- apply(SST[,,First10yrs], c(1,2), mean, na.rm = TRUE)
 SSTfuture <- apply(SST[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 
+
+# What will happen to Primary Production?
+# Let's do the same for Integrated Primary Production
+IntPP_nc <- open.nc("cesm_rcp85_intpp_zint_annual_200601-210012_remap.nc") # Primary production
+IntPP <- var.get.nc(IntPP_nc, 'intpp')  # Extract intpp data from intpp_nc
+dim(IntPP)
+
+# Anomaly of 2100 - 2006 for Primary Production
+PP_2006 <- apply(IntPP[,,First10yrs], c(1,2), mean, na.rm = TRUE)
+PP_2100 <- apply(IntPP[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
+
+hist(PP_2006)
+hist(PP_2100)
+
 # Let's have a look... Use ggplot to make a plot of the difference in mean SST
 # between 2091-2100 and the period 2006-2015
 df <- expand.grid(Lon = Lons, Lat = Lats)
 
-df <- df %>% mutate(SSTnow = as.vector(SSTnow),
-                    SSTfuture = as.vector(SSTfuture))
+df <- df %>%
+  mutate(SSTnow = as.vector(SSTnow),
+         SSTfuture = as.vector(SSTfuture),
+         SSTdiff = SSTfuture - SSTnow,
+         PP_2006 = as.vector(PP_2006),
+         PP_2100 = as.vector(PP_2100),
+         PPdiff = PP_2100 - PP_2006)
+
+sdf <-rasterFromXYZ(df, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")  #Convert first two columns as lon-lat and third as value
+sdf_poly <- rasterToPolygons(sdf, fun=NULL, n=4, na.rm=TRUE, digits=8, dissolve=FALSE) # Convert to polygon which is better for plotting
+sf <- st_as_sf(sdf_poly) %>% # Convert to sf
+  st_transform(crs = st_crs("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")) # Alter the CRS to robinson
+
+# Get world outline
+# Download and process world outline
+world <- ne_countries(scale = "small", returnclass = "sf") %>%
+  st_transform(world, crs = st_crs("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")) # Convert to different CRS
+
 
 # Plot SST for now
-ggplot(data = df, aes(x = Lon, y = Lat, fill = SSTnow)) +
-  geom_raster() + scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
-  theme_bw() + labs(fill = "") + ggtitle("2006-2015")
+ggplot(data = sf, aes(fill = SSTnow)) +
+  geom_sf(colour = NA) +
+  geom_sf(data = world, size = 0.05, fill = "grey50") +
+  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  theme_bw() +
+  labs(fill = "") +
+  ggtitle("2006-2015")
 
 # Plot SST for future
-ggplot(data = df, aes(x = Lon, y = Lat, fill = SSTfuture)) +
-  geom_raster() + scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
-  theme_bw() + labs(fill = "") + ggtitle("2090s")
+ggplot(data = sf, aes(fill = SSTfuture)) +
+  geom_sf(colour = NA) +
+  geom_sf(data = world, size = 0.05, fill = "grey50") +
+  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  theme_bw() +
+  labs(fill = "") +
+  ggtitle("2090s")
 
 # Plot anomaly
-ggplot(data = df, aes(x = Lon, y = Lat, fill = SSTfuture - SSTnow)) +
-  geom_raster() + scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
-  theme_bw() + labs(fill = "") + ggtitle("Anomaly")
+ggplot(data = sf, aes(fill = SSTdiff)) +
+  geom_sf(colour = NA) +
+  geom_sf(data = world, size = 0.05, fill = "grey50") +
+  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  theme_bw() +
+  labs(fill = "") +
+  ggtitle("Anomaly")
 
-# What will happen to Primary Production?
-# Let's do the same for Integrated Primary Production
-IntPP_nc <- open.nc("cesm_rcp85_intpp_zint_monthly_200601-210012.nc") # Primary production
-IntPP <- var.get.nc(IntPP_nc, 'intpp')  # Extract intpp data from intpp_nc
-dim(IntPP)
-
-
-df$IntPP_2006 <- as.vector(IntPP[,,6])   # Dec 2006
-df$IntPP_2100 <- as.vector(IntPP[,,1140]) # Dec 2100
 
 # Plot Integrated PP
-ggplot(data = df, aes(x = Lon, y = Lat, fill = IntPP_2006)) +
-  geom_raster() + scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
-  theme_bw() + labs(fill = "") + ggtitle("Integrated primary production Dec 2006")
+ggplot(data = sf, aes(fill = PP_2006)) +
+  geom_sf(colour = NA) +
+  geom_sf(data = world, size = 0.05, fill = "grey50") +
+  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  theme_bw() +
+  labs(fill = "") +
+  ggtitle("Integrated primary production Dec 2006-2015")
 
-# Anomaly of 2100 - 2006 for Primary Production
-PP_2006 <- apply(IntPP[,,1:120], c(1,2), mean, na.rm = TRUE)
-PP_2100 <- apply(IntPP[,,1021:1140], c(1,2), mean, na.rm = TRUE)
-PP_frame <- expand.grid(Lon = Lons, Lat = Lats)
-PP_frame$PP_2006 <- as.vector(PP_2006)
-PP_frame$PP_2100 <- as.vector(PP_2100)
-
-hist(PP_frame$PP_2006)
-hist(PP_frame$PP_2100)
+ggplot(data = sf, aes(fill = PP_2100)) +
+  geom_sf(colour = NA) +
+  geom_sf(data = world, size = 0.05, fill = "grey50") +
+  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  theme_bw() +
+  labs(fill = "") +
+  ggtitle("Integrated primary production 2090s")
 
 # Plot Anomaly PP
-ggplot(data = PP_frame, aes(x = Lon, y = Lat, fill = PP_2100-PP_2006)) +
-  geom_raster() + scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray", limits = c(-0.0002, 0.0002)) +
-  theme_bw() + labs(fill = "") + ggtitle("Integrated primary production 2090s-2006s")
+ggplot(data = sf, aes(fill = PPdiff)) +
+  geom_sf(colour = NA) +
+  geom_sf(data = world, size = 0.05, fill = "grey50") +
+  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray", limits = c(-0.0002, 0.0002)) +
+  theme_bw() +
+  labs(fill = "") +
+  ggtitle("Integrated primary production 2090s-2006s")
 
 rm(IntPP_nc, SST_nc) # Clean up
 
