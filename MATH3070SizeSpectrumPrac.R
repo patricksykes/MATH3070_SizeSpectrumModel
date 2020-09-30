@@ -97,16 +97,6 @@ ggplot(data = sf, aes(fill = SSTnow)) +
   ggtitle("2000s")
 # ggsave("SSTnow.png", dp = 150)
 
-# # Plot SST for future
-# ggplot(data = sf, aes(fill = SSTfuture)) +
-#   geom_sf(colour = NA) +
-#   geom_sf(data = world, size = 0.05, fill = "grey50") +
-#   scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
-#   theme_bw() +
-#   labs(fill = "SST (°C)") +
-#   ggtitle("2090s")
-# # ggsave("SSTfuture.png", dp = 150)
-
 # Plot anomaly
 ggplot(data = sf, aes(fill = SSTdiff)) +
   geom_sf(colour = NA) +
@@ -127,15 +117,6 @@ ggplot(data = sf, aes(fill = IntPPnow)) +
   ggtitle("Integrated PP 2000s")
 # ggsave("IntPPnow.png", dp = 150)
 
-# ggplot(data = sf, aes(fill = IntPPfuture)) +
-#   geom_sf(colour = NA) +
-#   geom_sf(data = world, size = 0.05, fill = "grey50") +
-#   scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
-#   theme_bw() +
-#   labs(fill = "IntPP") +
-#   ggtitle("Integrated PP 2090s")
-# # ggsave("IntPPfuture.png", dp = 150)
-
 # Plot Anomaly PP
 ggplot(data = sf, aes(fill = IntPPdiff)) +
   geom_sf(colour = NA) +
@@ -148,7 +129,7 @@ ggplot(data = sf, aes(fill = IntPPdiff)) +
 
 rm(IntPP_nc, SST_nc, Lats, Lons) # Clean up
 
-#### 2.CONVERT UNITS OF INTEGRATED PP TO STANDARD UNITS AND CALCULATE PP PER M^3 ####
+#### 2. CONVERT UNITS OF INTEGRATED PP TO STANDARD UNITS AND CALCULATE PP PER M^3 ####
 # Convert units of Integrated PP (which is integrated from the surface to the bottom of the ocean)
 IntPP <- IntPP*12*(60*60*24)  # Convert mmolC/m^2/s to mgC/m^2/s
                               # Then from mgC/m^2/s to mgC/m^2/d
