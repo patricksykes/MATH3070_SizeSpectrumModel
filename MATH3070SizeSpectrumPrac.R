@@ -183,7 +183,7 @@ N_Wm <- PP_Wm/P_Wm # Abundance of phytoplankton at Wm
 # Number of individuals = The primary production of all phytoplankton in size bin Wm divided by their per individual production
 # N_Wm (individuals/m^3) = (mgC/m^3/d) / (mgC/individual/day)
 
-rm(PP_Wm, P_Wm, SST) # Clean up
+# rm(PP_Wm, P_Wm, SST) # Clean up
 
 #### 5. CALCULATE INTERCEPT AND SLOPE OF ABUNDANCE SPECTRUM ####
 # Now the slope is independent of the amount of phytoplankton, and is only a function of:
