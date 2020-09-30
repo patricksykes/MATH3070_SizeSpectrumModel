@@ -11,6 +11,7 @@
 library(raster)     # For working with rasters
 library(ggplot2)    # For making figures
 library(colorRamps) # for Matlab like colour scheme
+library(RColorBrewer) # A divergent palette for anomaly plots
 library(RNetCDF)    # For reading/manipulating netCDFs
 library(dplyr)
 
@@ -29,6 +30,11 @@ print.nc(SST_nc) # Look at metadata and structure of netcdf
 SST <- var.get.nc(SST_nc, 'to')   # Extract SST data from SST_nc and put into an array
 
 dim(SST)                          # Dimensions of array - what do they refer to?
+# Remove first and last year of data because they are slightly wrong
+# Now data goes from 2007-2100 = 94 years
+SST <- SST[,,2:95]
+dim(SST)
+
 Lats <- var.get.nc(SST_nc, 'lat') # Extract lats from netcdf
 Lons <- var.get.nc(SST_nc, 'lon') # Extract lons from netcdf
 
@@ -53,15 +59,14 @@ SSTfuture <- apply(SST[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 IntPP_nc <- open.nc("cesm_rcp85_intpp_zint_annual_200601-210012_remap.nc") # Primary production
 IntPP <- var.get.nc(IntPP_nc, 'intpp')  # Extract intpp data from intpp_nc
 dim(IntPP)
-IntPP[,,96] <- IntPP[,,95]
+# Remove first and last year of data because they are slightly wrong
+# Now data goes from 2007-2100 = 94 years
+IntPP <- IntPP[,,2:95]
+dim(IntPP)
 
 # Anomaly of 2100 - 2006 for Primary Production
 IntPPnow <- apply(IntPP[,,First10yrs], c(1,2), mean, na.rm = TRUE)
 IntPPfuture <- apply(IntPP[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
-
-MeanIntPPnow <- mean(apply(IntPP[,,First10yrs], 3, mean, na.rm = TRUE)) #
-MeanIntPPfuture <- mean(apply(IntPP[,,Last10yrs], 3, mean, na.rm = TRUE)) #
-MeanIntPPfuture - MeanIntPPnow
 
 # Let's have a look... Use ggplot to make a plot of the difference in mean SST
 # between 2090s and the period 2000s
@@ -91,41 +96,41 @@ world <- ne_countries(scale = "small", returnclass = "sf") %>%
 ggplot(data = sf, aes(fill = SSTnow)) +
   geom_sf(colour = NA) +
   geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "grey") +
   theme_bw() +
   labs(fill = "SST (°C)") +
   ggtitle("2000s")
-# ggsave("SSTnow.png", dp = 150)
+ggsave("SSTnow.png", dp = 150)
 
 # Plot anomaly
 ggplot(data = sf, aes(fill = SSTdiff)) +
   geom_sf(colour = NA) +
   geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  scale_fill_gradientn(colours = rev(brewer.pal(11, "RdBu")), guide = "colorbar", na.value = "grey", limits = c(-6, 6)) +
   theme_bw() +
   labs(fill = "SST (°C)") +
   ggtitle("Anomaly")
-# ggsave("SSTanomaly.png", dp = 150)
+ggsave("SSTanomaly.png", dp = 150)
 
 # Plot Integrated PP
 ggplot(data = sf, aes(fill = IntPPnow)) +
   geom_sf(colour = NA) +
   geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "grey") +
   theme_bw() +
   labs(fill = "IntPP") +
   ggtitle("Integrated PP 2000s")
-# ggsave("IntPPnow.png", dp = 150)
+ggsave("IntPPnow.png", dp = 150)
 
 # Plot Anomaly PP
 ggplot(data = sf, aes(fill = IntPPdiff)) +
   geom_sf(colour = NA) +
   geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray", limits = c(-0.0002, 0.0002)) +
+  scale_fill_gradientn(colours = rev(brewer.pal(11, "RdBu")), guide = "colorbar", na.value = "grey", limits = c(-0.0002, 0.0002)) +
   theme_bw() +
   labs(fill = "IntPP") +
   ggtitle("Integrated PP 2090s-2000s")
-# ggsave("IntPPanomaly.png", dp = 150)
+ggsave("IntPPanomaly.png", dp = 150)
 
 rm(IntPP_nc, SST_nc, Lats, Lons) # Clean up
 
@@ -168,7 +173,7 @@ k_b   <- 8.62e-05     # Boltzmann's constant (for calculating the change in phys
 SST     <- SST + 273.15 # Temperature in Kelvin (SST is from the data given)
 
 # Calculate abundance of phytoplankton
-# General equation for daily production per individual From Brown et al. (2004)
+# General equation for annual production per individual From Brown et al. (2004)
 # Fits for organisms from bacteria to whales. Let's use it for phytoplankton
 P_Wm <- (exp(25.22 - E/(k_b*SST))*W_m^0.75)/365
 # P_Wm (mgC/individual/d) = Daily production per individual (for Wm). Equation for Annual production per individual from Fig. 2 in Brown et al. (2004)
@@ -224,11 +229,10 @@ Biom_year  <- apply(Biom_total, 3, sum, na.rm = TRUE) # Total global biomass in 
 
 # What is the total fish catch? Fish catch in tonnes
 format(Biom_year[1], scientific = TRUE) # Jennings et al. (2008) = 7.91 x 10^8 tonnes
-# Compare with our estimate for whichever year
 
 # Plot relative change in % over 21st century
-dat <- data.frame(Years = 2006:2101,
-                  PercChange = 100*Biom_year/Biom_year[1]-100) # % Change each year from 2006
+dat <- data.frame(Years = 2007:2100,
+                  PercChange = 100*Biom_year/Biom_year[1]-100) # % Change each year from 2007
 
 ggplot(data = dat,
        aes(Years, PercChange)) +
@@ -240,7 +244,7 @@ ggsave("FishTimeSeries.png", dpi = 150)
 
 # Calculate change in biomass between 2006-2015 and 2091-2100, as a %
 Biom_now <- apply(Biom_conc[,,1:10], c(1,2), mean, na.rm = TRUE)
-Biom_future <- apply(Biom_conc[,,87:96], c(1,2), mean, na.rm = TRUE)
+Biom_future <- apply(Biom_conc[,,85:94], c(1,2), mean, na.rm = TRUE)
 Biom_change <- 100*(Biom_future/Biom_now)-100
 
 # Modify high outliers, everything above + or -50%
@@ -263,7 +267,7 @@ rm(sdf, sdf_poly) # Clean up
 ggplot(data = sf, aes(fill = Biom_change)) +
   geom_sf(colour = NA) +
   geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar", na.value = "gray") +
+  scale_fill_gradientn(colours = rev(brewer.pal(11, "RdBu")), guide = "colorbar", na.value = "grey", limits = c(-50, 50)) +
   theme_bw() +
   labs(fill = "% change") +
   ggtitle("Fish biomass change 2090s - 2000s")
