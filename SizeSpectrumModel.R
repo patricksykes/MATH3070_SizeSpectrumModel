@@ -22,7 +22,7 @@ library(sf) # For simple geographic features
 # The integrated primary production comeS from a biogeochemical model (for nutrients and phytoplankton)
 # forced by the GCM
 
-SST_nc <- open.nc("cesm_rcp85_temp_zs_annual_200601-210012_remap.nc") # Sea surface temperature (SST)
+SST_nc <- open.nc("Input/cesm_rcp85_temp_zs_annual_200601-210012_remap.nc") # Sea surface temperature (SST)
 print.nc(SST_nc) # Look at metadata and structure of netcdf
 # Time period: Jan 2006 to Dec 2100
 SST <- var.get.nc(SST_nc, 'to')   # Extract SST data from SST_nc and put into an array
@@ -50,7 +50,7 @@ SSTnow <- apply(SST[,,First10yrs], c(1,2), mean, na.rm = TRUE)
 SSTfuture <- apply(SST[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 
 # What will happen to Primary Production in the future?
-IntPP_nc <- open.nc("cesm_rcp85_intpp_zint_annual_200601-210012_remap.nc") # Primary production
+IntPP_nc <- open.nc("Input/cesm_rcp85_intpp_zint_annual_200601-210012_remap.nc") # Primary production
 IntPP <- var.get.nc(IntPP_nc, 'intpp')  # Extract intpp data from intpp_nc
 dim(IntPP)
 
@@ -91,7 +91,7 @@ ggplot(data = sf, aes(fill = SSTnow)) +
   theme_bw() +
   labs(fill = "SST (°C)") +
   ggtitle("2000s")
-ggsave("SSTnow.png", dpi = 150)
+ggsave("Output/SSTnow.png", dpi = 150)
 
 # Plot change in SST
 ggplot(data = sf, aes(fill = SSTfuture-SSTnow)) +
@@ -101,7 +101,7 @@ ggplot(data = sf, aes(fill = SSTfuture-SSTnow)) +
   theme_bw() +
   labs(fill = "delta SST (°C)") +
   ggtitle("Change in SST (2090s-2000s)")
-ggsave("SSTchange.png", dpi = 150)
+ggsave("Output/SSTchange.png", dpi = 150)
 
 # Plot Integrated PP
 ggplot(data = sf, aes(fill = IntPPnow)) +
@@ -111,7 +111,7 @@ ggplot(data = sf, aes(fill = IntPPnow)) +
   theme_bw() +
   labs(fill = "IntPP") +
   ggtitle("Integrated PP 2000s")
-ggsave("IntPPnow.png", dpi = 150)
+ggsave("Output/IntPPnow.png", dpi = 150)
 
 # Plot change in PP
 ggplot(data = sf, aes(fill = IntPPfuture-IntPPnow)) +
@@ -121,7 +121,7 @@ ggplot(data = sf, aes(fill = IntPPfuture-IntPPnow)) +
   theme_bw() +
   labs(fill = "delta IntPP") +
   ggtitle("Change in integrated PP (2090s-2000s)")
-ggsave("IntPPchange.png", dpi = 150)
+ggsave("Output/IntPPchange.png", dpi = 150)
 
 rm(sf, IntPP_nc, SST_nc, df, SSTnow, SSTfuture, IntPPnow, IntPPfuture) # Clean up
 
@@ -229,7 +229,7 @@ ggplot(data = dat,
   ylab("% change") +
   ggtitle("Change in Total Consumer Biomass \n  under RCP8.5") +
   theme_bw()
-ggsave("FishTimeSeries.png", dpi = 150)
+ggsave("Output/FishTimeSeries.png", dpi = 150)
 
 # Calculate change in biomass between 2006-2015 and 2091-2100, as a %
 Biom_now <- apply(Biom_conc[,,1:10], c(1,2), mean, na.rm = TRUE)
@@ -262,4 +262,4 @@ ggplot(data = sf, aes(fill = Biom_change)) +
   theme_bw() +
   labs(fill = "% change") +
   ggtitle("Fish biomass change 2090s - 2000s")
-ggsave("FishBiomassChange.png", dpi = 150)
+ggsave("Output/FishBiomassChange.png", dpi = 150)
