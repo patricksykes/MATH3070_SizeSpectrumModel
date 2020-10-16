@@ -2,7 +2,7 @@
 # Date: October 2019
 # This is a simplified version of Jennings et al.'s (2008)
 # MACROECOLOGICAL global marine ecosystem model (doi:10.1098/rspb.2008.0192).
-# We use RCP(Representative Concentration Pathways) 8.5 future scenario for greenhouse
+# We use RCP (Representative Concentration Pathways) 8.5 future scenario for greenhouse
 # gas emissions during the 21st century and explore changes in the global
 # fish biomass
 # Last Updated: 39/9/2020
