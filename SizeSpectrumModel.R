@@ -63,91 +63,94 @@ dim(IntPP)
 IntPPnow <- apply(IntPP[,,First10yrs], c(1,2), mean, na.rm = TRUE)
 IntPPfuture <- apply(IntPP[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 
-# Let's have a look... Use ggplot to make a plot of the difference in mean SST
-# between 2090s and the period 2000s
-df <- expand.grid(Lon = Lons, Lat = Lats) %>%
-  mutate(SSTnow = as.vector(SSTnow),
-         SSTfuture = as.vector(SSTfuture),
-         IntPPnow = as.vector(IntPPnow),
-         IntPPfuture = as.vector(IntPPfuture))
-
-sdf <- rasterFromXYZ(df, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")  # Convert first two columns as lon-lat and third as value
-sdf_poly <- rasterToPolygons(sdf, fun=NULL, n=4, na.rm=TRUE, digits=8, dissolve=FALSE) # Convert to polygon which is better for plotting
-sf <- st_as_sf(sdf_poly) %>% # Convert raster to sf
-  st_transform(crs = st_crs("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")) # Alter the CRS to robinson
-
-rm(sdf, sdf_poly) # Clean up
-
-# Get world outline
-# Download and process world outline
-world <- ne_countries(scale = "small", returnclass = "sf") %>%
-  st_transform(world, crs = st_crs("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")) # Convert to different CRS
-
-# Plot SST for now
-ggplot(data = sf, aes(fill = SSTnow)) +
-  geom_sf(colour = NA) +
-  geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar") +
-  theme_bw() +
-  labs(fill = "SST (°C)") +
-  ggtitle("2000s")
-ggsave("Output/SSTnow.png", dpi = 150)
-
-# Plot change in SST
-ggplot(data = sf, aes(fill = SSTfuture-SSTnow)) +
-  geom_sf(colour = NA) +
-  geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradient2(limits = c(-6, 6), midpoint = 0, low = "blue", mid = "white", high = "red", guide = "colourbar") +
-  theme_bw() +
-  labs(fill = "delta SST (°C)") +
-  ggtitle("Change in SST (2090s-2000s)")
-ggsave("Output/SSTchange.png", dpi = 150)
-
-# Plot Integrated PP
-ggplot(data = sf, aes(fill = IntPPnow)) +
-  geom_sf(colour = NA) +
-  geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar") +
-  theme_bw() +
-  labs(fill = "IntPP") +
-  ggtitle("Integrated PP 2000s")
-ggsave("Output/IntPPnow.png", dpi = 150)
-
-# Plot change in PP
-ggplot(data = sf, aes(fill = IntPPfuture-IntPPnow)) +
-  geom_sf(colour = NA) +
-  geom_sf(data = world, size = 0.05, fill = "grey50") +
-  scale_fill_gradient2(limits = c(-0.0002, 0.0002), midpoint = 0, low = "blue", mid = "white", high = "red", guide = "colourbar") +
-  theme_bw() +
-  labs(fill = "delta IntPP") +
-  ggtitle("Change in integrated PP (2090s-2000s)")
-ggsave("Output/IntPPchange.png", dpi = 150)
-
-rm(sf, IntPP_nc, SST_nc, df, SSTnow, SSTfuture, IntPPnow, IntPPfuture) # Clean up
+# # Let's have a look... Use ggplot to make a plot of the difference in mean SST
+# # between 2090s and the period 2000s
+# df <- expand.grid(Lon = Lons, Lat = Lats) %>%
+#   mutate(SSTnow = as.vector(SSTnow),
+#          SSTfuture = as.vector(SSTfuture),
+#          IntPPnow = as.vector(IntPPnow),
+#          IntPPfuture = as.vector(IntPPfuture))
+#
+# sdf <- rasterFromXYZ(df, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")  # Convert first two columns as lon-lat and third as value
+# sdf_poly <- rasterToPolygons(sdf, fun=NULL, n=4, na.rm=TRUE, digits=8, dissolve=FALSE) # Convert to polygon which is better for plotting
+# sf <- st_as_sf(sdf_poly) %>% # Convert raster to sf
+#   st_transform(crs = st_crs("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")) # Alter the CRS to robinson
+#
+# rm(sdf, sdf_poly) # Clean up
+#
+# # Get world outline
+# # Download and process world outline
+# world <- ne_countries(scale = "small", returnclass = "sf") %>%
+#   st_transform(world, crs = st_crs("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")) # Convert to different CRS
+#
+# # Plot SST for now
+# ggplot(data = sf, aes(fill = SSTnow)) +
+#   geom_sf(colour = NA) +
+#   geom_sf(data = world, size = 0.05, fill = "grey50") +
+#   scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar") +
+#   theme_bw() +
+#   labs(fill = "SST (°C)") +
+#   ggtitle("2000s")
+# ggsave("Output/SSTnow.png", dpi = 150)
+#
+# # Plot change in SST
+# ggplot(data = sf, aes(fill = SSTfuture-SSTnow)) +
+#   geom_sf(colour = NA) +
+#   geom_sf(data = world, size = 0.05, fill = "grey50") +
+#   scale_fill_gradient2(limits = c(-6, 6), midpoint = 0, low = "blue", mid = "white", high = "red", guide = "colourbar") +
+#   theme_bw() +
+#   labs(fill = "delta SST (°C)") +
+#   ggtitle("Change in SST (2090s-2000s)")
+# ggsave("Output/SSTchange.png", dpi = 150)
+#
+# # Plot Integrated PP
+# ggplot(data = sf, aes(fill = IntPPnow)) +
+#   geom_sf(colour = NA) +
+#   geom_sf(data = world, size = 0.05, fill = "grey50") +
+#   scale_fill_gradientn(colours = matlab.like(12), guide = "colorbar") +
+#   theme_bw() +
+#   labs(fill = "IntPP") +
+#   ggtitle("Integrated PP 2000s")
+# ggsave("Output/IntPPnow.png", dpi = 150)
+#
+# # Plot change in PP
+# ggplot(data = sf, aes(fill = IntPPfuture-IntPPnow)) +
+#   geom_sf(colour = NA) +
+#   geom_sf(data = world, size = 0.05, fill = "grey50") +
+#   scale_fill_gradient2(limits = c(-0.0002, 0.0002), midpoint = 0, low = "blue", mid = "white", high = "red", guide = "colourbar") +
+#   theme_bw() +
+#   labs(fill = "delta IntPP") +
+#   ggtitle("Change in integrated PP (2090s-2000s)")
+# ggsave("Output/IntPPchange.png", dpi = 150)
+#
+# rm(sf, IntPP_nc, SST_nc, df, SSTnow, SSTfuture, IntPPnow, IntPPfuture) # Clean up
 
 #### 2. CONVERT UNITS OF INTEGRATED PP TO STANDARD UNITS AND CALCULATE PP PER M^3 ####
 # Convert units of Integrated PP (which is integrated from the surface to the bottom of the ocean)
-IntPP <- IntPP*12*(60*60*24)  # Convert mmolC/m^2/s to mgC/m^2/s (12 = carbon atomic weight)
-                              # Then from mgC/m^2/s to mgC/m^2/d
+IntPP <- IntPP*12*(60*60*24)  # Convert mmolC/m2/s to mgC/m2/s (12 = carbon atomic weight)
+                              # Then from mgC/m2/s to mgC/m2/d
 
 #### 3. CALCULATE PHYTOPLANKTON MEDIAN CELL SIZE FOR EACH GRID AND MONTH ####
 # Need Chl-a for estimating median cell size, but no Chl-a provided,
 # so estimate from Fig. 1b of Maranon et al. (2014) doi:10.1371/journal.pone.0099312
-Chl <- 10^((log10(IntPP/100)-1.58)/1.29) # Convert PP into Chl-a (mg/m^3)
-# NOTE: Convert IntPP (mgC/m^2/d) to PP (mgC/m^3/d) by diving by 100 m, assuming all phyto equally through top 100 m (sunlit zone)
+Chl <- 10^((log10(IntPP/100)-1.58)/1.29) # Convert PP into Chl-a (mg/m3)
+# This equation requires PP in mgC/m3/d
+# NOTE: Convert IntPP (mgC/m2/d) to PP (mgC/m3/d) by diving by 100 m, assuming all phyto equally through top 100 m (sunlit zone)
 
 # Estimate median phytoplankton cell size (Wm) using equation from Table 3
 # in Barnes et al. (2011) doi:10.1093/plankt/fbq088
-W_m <- 10^(1.34-0.043*SST+0.929*log10(Chl)) # Wm (in pgC)
-W_m <- (W_m/1e12)*10 # Wm (in g) = PgC to gC, then multiply by 10 to get grams (wet or live weight)
+Wm <- 10^(1.34-0.043*SST+0.929*log10(Chl)) # Wm (in pgC)
+Wm <- (Wm/1e12)*10 # Wm (in g) = PgC to gC, then multiply by 10 to get g (wet or live weight)
 
 # Now PP is by phytoplankton of varying sizes. So spread PP across 61 size bins
-# (assuming PP equal across all classes: Li 2002), 30 smaller than W_m, 30 larger
+# (assuming PP equal across all classes: Li 2002), 30 smaller than Wm, 30 larger
 # so only 1/61 of PP at median phytoplankton cell size (Wm)
-PP_Wm <- IntPP/61 # PP_Wm (mgC/m^2/d) is the primary production available at median phytoplankton size Wm
-# Note use IntPP not IntPP/100 because all of the IntPP is available to the foodweb
 
-rm(Chl, IntPP) # Clean up
+PP_Wm <- IntPP/61 # PP_Wm (mgC/m2/d) is the primary production available at median phytoplankton size Wm
+# Note use IntPP not IntPP/100 because all of the IntPP is available to the foodweb
+PP_Wm <- (PP_Wm / 1000) * 10 # mgC/m2/d to g/m2/d
+
+# rm(Chl, IntPP) # Clean up
 
 #### 4. CALCULATE ABUNDANCE OF PHYTOPLANKTON AT Wm ####
 # Set up variables for the model
@@ -163,7 +166,7 @@ SST     <- SST + 273.15 # Temperature in Kelvin (SST is from the data given)
 # Calculate abundance of phytoplankton
 # General equation for annual production per individual From Brown et al. (2004) Fig. 2
 # Fits for organisms from bacteria to whales. Let's use it for phytoplankton
-P_Wm <- (exp(25.22 - E/(k_b*SST))*W_m^0.76) # P_Wm in g/ind/yr
+P_Wm <- (exp(25.22 - E/(k_b*SST))*Wm^0.76) # P_Wm in g/ind/yr
 
 # Convert to per day
 P_Wm <- P_Wm/365 # P_Wm (in g/ind/d)
@@ -179,13 +182,14 @@ N_Wm <- PP_Wm/P_Wm
 # Alpha (the trophic transfer efficiency) and the Beta (the Predator Prey Mass Ratio, PPMR)
 # *** See extra notes for derivation ***
 b <- log10(Alpha)/log10(Beta)-0.75
-# b = Slope of size spectrum (log10(abundance) vs log10(body size))
+# b = Slope of size spectrum (log10(N) vs log10(W))
 
 # Calculate intercept of abundance spectrum
 # We know that N = aw^b, so a = N/w^b
-# So we can calculate the intercept a if we know the slope B and a point on the line (W_m, N_Wm)
-a <- N_Wm/(W_m^b)
+# So we can calculate the intercept a if we know the slope B and a point on the line (Wm, N_Wm)
+a <- N_Wm/(Wm^b)
 # a = Intercept of size spectrum (log10(abundance) with log10(body size))
+# NOTE: It varies spatially
 
 #### 6. CALCULATE BIOMASS OF FISH AND PLOT ####
 # Calculate biomass spectrum B(W) by integrating the abundance spectrum N(W)
@@ -193,13 +197,15 @@ a <- N_Wm/(W_m^b)
 
 # What is the biomass of the fish in the world?
 # Calculate total biomass between 1 g and 1 tonne (and assume they are all fish)
-W_min <- 1    # W_min = Minimum mass
-W_max <- 10^6  # W_max = Maximum mass
-Biom_conc <- (a/(b+1))*(W_max^(b+1) - W_min^(b+1)) # Definite integral of N(W)dw between W_max and W_min
-# Biom_conc (g/m^3) = biomass concentration
-Biom_conc <- Biom_conc/10^6 # Convert to tonnes/m^3
+Wmin <- 1    # Wmin = Minimum mass
+Wmax <- 1e6  # Wmax = Maximum mass
+# Biom_conc <- (a/(b+1))*(Wmax^(b+1) - Wmin^(b+1)) # Definite integral of N(W)dw between Wmax and Wmin
+Biom_conc <- (a/(b+1))*(Wmax^(b+1) - Wmin^(b+1))
 
-rm(a, N_Wm, P_Wm, PP_Wm, SST) # Clean up
+# Biom_conc (g/m^3) = biomass concentration
+Biom_conc <- Biom_conc/10^6 # Convert to tonnes/m^2
+
+# rm(a, N_Wm, P_Wm, PP_Wm, SST) # Clean up
 
 # Now we can't just sum up every grid square - why?
 # Multiply by approximate surface area of grid squares to get total biomass
@@ -217,7 +223,9 @@ Biom_total <- sweep(x = Biom_conc, MARGIN = c(1,2), FUN = '*', Area_grid)  # Tot
 Biom_year  <- apply(Biom_total, 3, sum, na.rm = TRUE) # Total global biomass in each year
 
 # What is the total fish catch? Fish catch in tonnes
-format(mean(Biom_year[First10yrs]), scientific = TRUE) # Jennings et al. (2008) = 8.991 x 10^8 tonnes
+format(mean(Biom_year[First10yrs]), scientific = TRUE)
+# Jennings et al. (2008) = 8.991 x 10^8 tonnes
+# Now: 2.844372e+12 tonnes
 
 # Plot relative change in % over 21st century
 dat <- data.frame(Years = 2007:2100,
@@ -232,8 +240,8 @@ ggplot(data = dat,
 ggsave("Output/FishTimeSeries.png", dpi = 150)
 
 # Calculate change in biomass between 2006-2015 and 2091-2100, as a %
-Biom_now <- apply(Biom_conc[,,1:10], c(1,2), mean, na.rm = TRUE)
-Biom_future <- apply(Biom_conc[,,85:94], c(1,2), mean, na.rm = TRUE)
+Biom_now <- apply(Biom_conc[,,First10yrs], c(1,2), mean, na.rm = TRUE)
+Biom_future <- apply(Biom_conc[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 Biom_change <- 100*(Biom_future/Biom_now)-100
 
 # Modify high outliers, everything above or below 50%
@@ -258,8 +266,21 @@ ggplot(data = sf, aes(fill = Biom_change)) +
   geom_sf(colour = NA) +
   geom_sf(data = world, size = 0.05, fill = "grey50") +
   scale_fill_gradient2(limits = c(-50, 50), midpoint = 0, low = "blue", mid = "white", high = "red", guide = "colourbar") +
-  #  scale_fill_gradientn(colours = rev(brewer.pal(11, "RdBu")), guide = "colorbar", na.value = "grey", limits = c(-50, 50)) +
   theme_bw() +
   labs(fill = "% change") +
   ggtitle("Fish biomass change 2090s - 2000s")
 ggsave("Output/FishBiomassChange.png", dpi = 150)
+
+# NEW
+a_Mn <- mean(apply(a[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
+Wm_Mn <- mean(apply(Wm[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
+
+library(ggplot2)
+ggplot(data.frame(x = c(Wm_Mn, 1e6)), aes(x)) +
+  stat_function(fun = function(x)a_Mn*x^b) +
+  scale_x_log10() +
+  scale_y_log10()
+
+Wmin <- 1    # Wmin = Minimum mass
+Wmax <- 10^6  # Wmax = Maximum mass
+log10(Wmax)
