@@ -8,13 +8,13 @@
 # Last Updated: 39/9/2020
 
 #### 1. PRELIMINARIES ####
-library(raster)     # For working with rasters
-library(ggplot2)    # For making figures
-library(colorRamps) # for Matlab like colour scheme
-library(RNetCDF)    # For reading/manipulating netCDFs
-library(dplyr)
-library(rnaturalearth) # install.packages(c("rnaturalearth", "rnaturalearthdata"))
-library(sf) # For simple geographic features
+require(raster)     # For working with rasters
+require(ggplot2)    # For making figures
+require(colorRamps) # for Matlab like colour scheme
+require(RNetCDF)    # For reading/manipulating netCDFs
+require(dplyr)
+require(rnaturalearth) # install.packages(c("rnaturalearth", "rnaturalearthdata"))
+require(sf) # For simple geographic features
 
 # LOAD AND EXPLORE ENVIRONMENTAL VARIABLES
 # cesm_rcp85 is a GCM (General Circulation Model)
@@ -275,7 +275,6 @@ ggsave("Output/FishBiomassChange.png", dpi = 150)
 a_Mn <- mean(apply(a[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
 Wm_Mn <- mean(apply(Wm[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
 
-library(ggplot2)
 ggplot(data.frame(x = c(Wm_Mn, 1e6)), aes(x)) +
   stat_function(fun = function(x)a_Mn*x^b) +
   scale_x_log10() +
