@@ -125,10 +125,14 @@ IntPPfuture <- apply(IntPP[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 #
 # rm(sf, IntPP_nc, SST_nc, df, SSTnow, SSTfuture, IntPPnow, IntPPfuture) # Clean up
 
+
+
 #### 2. CONVERT UNITS OF INTEGRATED PP TO STANDARD UNITS AND CALCULATE PP PER M^3 ####
 # Convert units of Integrated PP (which is integrated from the surface to the bottom of the ocean)
 IntPP <- IntPP*12*(60*60*24)  # Convert mmolC/m2/s to mgC/m2/s (12 = carbon atomic weight)
                               # Then from mgC/m2/s to mgC/m2/d
+
+
 
 #### 3. CALCULATE PHYTOPLANKTON MEDIAN CELL SIZE FOR EACH GRID AND MONTH ####
 # Need Chl-a for estimating median cell size, but no Chl-a provided,
@@ -151,6 +155,8 @@ PP_Wm <- IntPP/61 # PP_Wm (mgC/m2/d) is the primary production available at medi
 PP_Wm <- (PP_Wm / 1000) * 10 # mgC/m2/d to g/m2/d
 
 # rm(Chl, IntPP) # Clean up
+
+
 
 #### 4. CALCULATE ABUNDANCE OF PHYTOPLANKTON AT Wm ####
 # Set up variables for the model
@@ -177,6 +183,8 @@ N_Wm <- PP_Wm/P_Wm
 # Number of individuals = The primary production of all phytoplankton in size bin Wm divided by their per individual production
 # N_Wm (ind/m^2) = (g/m^2/d) / (g/ind/d)
 
+
+
 #### 5. CALCULATE INTERCEPT AND SLOPE OF ABUNDANCE SPECTRUM ####
 # Now the slope is independent of the amount of phytoplankton, and is only a function of:
 # Alpha (the trophic transfer efficiency) and the Beta (the Predator Prey Mass Ratio, PPMR)
@@ -190,6 +198,8 @@ b <- log10(Alpha)/log10(Beta)-0.75
 a <- N_Wm/(Wm^b)
 # a = Intercept of size spectrum (log10(abundance) with log10(body size))
 # NOTE: It varies spatially
+
+
 
 #### 6. CALCULATE BIOMASS OF FISH AND PLOT ####
 # Calculate biomass spectrum B(W) by integrating the abundance spectrum N(W)
@@ -249,6 +259,8 @@ hist(Biom_change) # Raw distribution of changes
 Biom_change[Biom_change > 50] <- 50
 Biom_change[Biom_change < -50] <- -50
 
+
+
 ###### 6. GLOBAL MAPS OF FISH BIOMASS
 ## Use ggplot to make plot map of change in fish biomass
 df <- expand.grid(Lon = Lons, Lat = Lats) %>%
@@ -262,6 +274,9 @@ sf <- st_as_sf(sdf_poly) %>% # Convert to sf
 
 rm(sdf, sdf_poly) # Clean up
 
+# world <- ne_countries(scale = "small", returnclass = "sf") %>%
+#   st_transform(world, crs = st_crs("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")) # Convert to different CRS
+
 ggplot(data = sf, aes(fill = Biom_change)) +
   geom_sf(colour = NA) +
   geom_sf(data = world, size = 0.05, fill = "grey50") +
@@ -271,10 +286,13 @@ ggplot(data = sf, aes(fill = Biom_change)) +
   ggtitle("Fish biomass change 2090s - 2000s")
 ggsave("Output/FishBiomassChange.png", dpi = 150)
 
-# NEW
-a_Mn <- mean(apply(a[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
-Wm_Mn <- mean(apply(Wm[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
 
+
+# NEW
+a_Mn <- mean(apply(a[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE) #mean a value over first 10 years
+Wm_Mn <- mean(apply(Wm[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE) #mean Wm value over first 10 years
+
+#plot mean abundance spectrum (log10(N) vs log10(W))
 ggplot(data.frame(x = c(Wm_Mn, 1e6)), aes(x)) +
   stat_function(fun = function(x)a_Mn*x^b) +
   scale_x_log10() +
