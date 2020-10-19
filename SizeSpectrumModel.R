@@ -1,11 +1,11 @@
-# Author: Ryan Heneghan and Anthony J. Richardson
+# Authors: Ryan F. Heneghan, Anthony J. Richardson, Patrick Sykes and Jason D. Everett
 # Date: October 2019
 # This is a simplified version of Jennings et al.'s (2008)
 # MACROECOLOGICAL global marine ecosystem model (doi:10.1098/rspb.2008.0192).
-# We use RCP (Representative Concentration Pathways) 8.5 future scenario for greenhouse
+# We use SSP (Shared Socioeconomic Pathway) 585 future scenario for greenhouse
 # gas emissions during the 21st century and explore changes in the global
 # fish biomass
-# Last Updated: 39/9/2020
+# Last Updated: 19/10/2020
 
 #### 1. PRELIMINARIES ####
 require(raster)     # For working with rasters
@@ -22,15 +22,11 @@ require(sf) # For simple geographic features
 # The integrated primary production comeS from a biogeochemical model (for nutrients and phytoplankton)
 # forced by the GCM
 
-SST_nc <- open.nc("Input/cesm_rcp85_temp_zs_annual_200601-210012_remap.nc") # Sea surface temperature (SST)
+SST_nc <- open.nc("Input/tos_Oyr_CESM2_ssp585_r4i1p1f1_onedeg_201501-210012.nc") # Sea surface temperature (SST)
 print.nc(SST_nc) # Look at metadata and structure of netcdf
 # Time period: Jan 2006 to Dec 2100
-SST <- var.get.nc(SST_nc, 'to')   # Extract SST data from SST_nc and put into an array
+SST <- var.get.nc(SST_nc, 'tos')   # Extract SST data from SST_nc and put into an array
 dim(SST)                          # Dimensions of array - what do they refer to?
-# Remove first and last year of data because they are slightly wrong
-# Now data goes from 2007-2100 = 94 years
-SST <- SST[,,2:95]
-dim(SST)
 
 Lats <- var.get.nc(SST_nc, 'lat') # Extract lats from netcdf
 Lons <- var.get.nc(SST_nc, 'lon') # Extract lons from netcdf
@@ -50,13 +46,8 @@ SSTnow <- apply(SST[,,First10yrs], c(1,2), mean, na.rm = TRUE)
 SSTfuture <- apply(SST[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 
 # What will happen to Primary Production in the future?
-IntPP_nc <- open.nc("Input/cesm_rcp85_intpp_zint_annual_200601-210012_remap.nc") # Primary production
+IntPP_nc <- open.nc("Input/intpp_Oyr_CESM2_ssp585_r4i1p1f1_onedeg_201501-210012.nc") # Primary production
 IntPP <- var.get.nc(IntPP_nc, 'intpp')  # Extract intpp data from intpp_nc
-dim(IntPP)
-
-# Remove first and last year of data because they are slightly wrong
-# Now data goes from 2007-2100 = 94 years
-IntPP <- IntPP[,,2:95]
 dim(IntPP)
 
 # For plotting later, let's calculate the IntPP map for 10 year time slices now and in the future
@@ -238,7 +229,7 @@ format(mean(Biom_year[First10yrs]), scientific = TRUE)
 # Now: 2.844372e+12 tonnes
 
 # Plot relative change in % over 21st century
-dat <- data.frame(Years = 2007:2100,
+dat <- data.frame(Years = 2015:2100,
                   PercChange = 100*Biom_year/Biom_year[1]-100) # % Change each year from 2007
 
 ggplot(data = dat,
