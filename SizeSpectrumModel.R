@@ -1,20 +1,20 @@
-# Author: Ryan Heneghan and Anthony J. Richardson
+# Authors: Ryan F. Heneghan, Anthony J. Richardson, Patrick Sykes and Jason D. Everett
 # Date: October 2019
 # This is a simplified version of Jennings et al.'s (2008)
 # MACROECOLOGICAL global marine ecosystem model (doi:10.1098/rspb.2008.0192).
-# We use RCP (Representative Concentration Pathways) 8.5 future scenario for greenhouse
+# We use SSP (Shared Socioeconomic Pathway) 585 future scenario for greenhouse
 # gas emissions during the 21st century and explore changes in the global
 # fish biomass
-# Last Updated: 39/9/2020
+# Last Updated: 19/10/2020
 
 #### 1. PRELIMINARIES ####
-library(raster)     # For working with rasters
-library(ggplot2)    # For making figures
-library(colorRamps) # for Matlab like colour scheme
-library(RNetCDF)    # For reading/manipulating netCDFs
-library(dplyr)
-library(rnaturalearth) # install.packages(c("rnaturalearth", "rnaturalearthdata"))
-library(sf) # For simple geographic features
+require(raster)     # For working with rasters
+require(ggplot2)    # For making figures
+require(colorRamps) # for Matlab like colour scheme
+require(RNetCDF)    # For reading/manipulating netCDFs
+require(dplyr)
+require(rnaturalearth) # install.packages(c("rnaturalearth", "rnaturalearthdata"))
+require(sf) # For simple geographic features
 
 # LOAD AND EXPLORE ENVIRONMENTAL VARIABLES
 # cesm_rcp85 is a GCM (General Circulation Model)
@@ -22,15 +22,11 @@ library(sf) # For simple geographic features
 # The integrated primary production comeS from a biogeochemical model (for nutrients and phytoplankton)
 # forced by the GCM
 
-SST_nc <- open.nc("Input/cesm_rcp85_temp_zs_annual_200601-210012_remap.nc") # Sea surface temperature (SST)
+SST_nc <- open.nc("Input/tos_Oyr_CESM2_ssp585_r4i1p1f1_onedeg_201501-210012.nc") # Sea surface temperature (SST)
 print.nc(SST_nc) # Look at metadata and structure of netcdf
 # Time period: Jan 2006 to Dec 2100
-SST <- var.get.nc(SST_nc, 'to')   # Extract SST data from SST_nc and put into an array
+SST <- var.get.nc(SST_nc, 'tos')   # Extract SST data from SST_nc and put into an array
 dim(SST)                          # Dimensions of array - what do they refer to?
-# Remove first and last year of data because they are slightly wrong
-# Now data goes from 2007-2100 = 94 years
-SST <- SST[,,2:95]
-dim(SST)
 
 Lats <- var.get.nc(SST_nc, 'lat') # Extract lats from netcdf
 Lons <- var.get.nc(SST_nc, 'lon') # Extract lons from netcdf
@@ -50,13 +46,8 @@ SSTnow <- apply(SST[,,First10yrs], c(1,2), mean, na.rm = TRUE)
 SSTfuture <- apply(SST[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 
 # What will happen to Primary Production in the future?
-IntPP_nc <- open.nc("Input/cesm_rcp85_intpp_zint_annual_200601-210012_remap.nc") # Primary production
+IntPP_nc <- open.nc("Input/intpp_Oyr_CESM2_ssp585_r4i1p1f1_onedeg_201501-210012.nc") # Primary production
 IntPP <- var.get.nc(IntPP_nc, 'intpp')  # Extract intpp data from intpp_nc
-dim(IntPP)
-
-# Remove first and last year of data because they are slightly wrong
-# Now data goes from 2007-2100 = 94 years
-IntPP <- IntPP[,,2:95]
 dim(IntPP)
 
 # For plotting later, let's calculate the IntPP map for 10 year time slices now and in the future
@@ -125,10 +116,14 @@ IntPPfuture <- apply(IntPP[,,Last10yrs], c(1,2), mean, na.rm = TRUE)
 #
 # rm(sf, IntPP_nc, SST_nc, df, SSTnow, SSTfuture, IntPPnow, IntPPfuture) # Clean up
 
+
+
 #### 2. CONVERT UNITS OF INTEGRATED PP TO STANDARD UNITS AND CALCULATE PP PER M^3 ####
 # Convert units of Integrated PP (which is integrated from the surface to the bottom of the ocean)
 IntPP <- IntPP*12*(60*60*24)  # Convert mmolC/m2/s to mgC/m2/s (12 = carbon atomic weight)
                               # Then from mgC/m2/s to mgC/m2/d
+
+
 
 #### 3. CALCULATE PHYTOPLANKTON MEDIAN CELL SIZE FOR EACH GRID AND MONTH ####
 # Need Chl-a for estimating median cell size, but no Chl-a provided,
@@ -151,6 +146,8 @@ PP_Wm <- IntPP/61 # PP_Wm (mgC/m2/d) is the primary production available at medi
 PP_Wm <- (PP_Wm / 1000) * 10 # mgC/m2/d to g/m2/d
 
 # rm(Chl, IntPP) # Clean up
+
+
 
 #### 4. CALCULATE ABUNDANCE OF PHYTOPLANKTON AT Wm ####
 # Set up variables for the model
@@ -177,6 +174,8 @@ N_Wm <- PP_Wm/P_Wm
 # Number of individuals = The primary production of all phytoplankton in size bin Wm divided by their per individual production
 # N_Wm (ind/m^2) = (g/m^2/d) / (g/ind/d)
 
+
+
 #### 5. CALCULATE INTERCEPT AND SLOPE OF ABUNDANCE SPECTRUM ####
 # Now the slope is independent of the amount of phytoplankton, and is only a function of:
 # Alpha (the trophic transfer efficiency) and the Beta (the Predator Prey Mass Ratio, PPMR)
@@ -187,9 +186,11 @@ b <- log10(Alpha)/log10(Beta)-0.75
 # Calculate intercept of abundance spectrum
 # We know that N = aw^b, so a = N/w^b
 # So we can calculate the intercept a if we know the slope B and a point on the line (Wm, N_Wm)
-a <- N_Wm/Wm^b
+a <- N_Wm/(Wm^b)
 # a = Intercept of size spectrum (log10(abundance) with log10(body size))
 # NOTE: It varies spatially
+
+
 
 #### 6. CALCULATE BIOMASS OF FISH AND PLOT ####
 # Calculate biomass spectrum B(W) by integrating the abundance spectrum N(W)
@@ -228,7 +229,7 @@ format(mean(Biom_year[First10yrs]), scientific = TRUE)
 # Now: 2.844372e+12 tonnes
 
 # Plot relative change in % over 21st century
-dat <- data.frame(Years = 2007:2100,
+dat <- data.frame(Years = 2015:2100,
                   PercChange = 100*Biom_year/Biom_year[1]-100) # % Change each year from 2007
 
 ggplot(data = dat,
@@ -249,6 +250,8 @@ hist(Biom_change) # Raw distribution of changes
 Biom_change[Biom_change > 50] <- 50
 Biom_change[Biom_change < -50] <- -50
 
+
+
 ###### 6. GLOBAL MAPS OF FISH BIOMASS
 ## Use ggplot to make plot map of change in fish biomass
 df <- expand.grid(Lon = Lons, Lat = Lats) %>%
@@ -262,6 +265,9 @@ sf <- st_as_sf(sdf_poly) %>% # Convert to sf
 
 rm(sdf, sdf_poly) # Clean up
 
+# world <- ne_countries(scale = "small", returnclass = "sf") %>%
+#   st_transform(world, crs = st_crs("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")) # Convert to different CRS
+
 ggplot(data = sf, aes(fill = Biom_change)) +
   geom_sf(colour = NA) +
   geom_sf(data = world, size = 0.05, fill = "grey50") +
@@ -271,10 +277,13 @@ ggplot(data = sf, aes(fill = Biom_change)) +
   ggtitle("Fish biomass change 2090s - 2000s")
 ggsave("Output/FishBiomassChange.png", dpi = 150)
 
-# NEW
-a_Mn <- mean(apply(a[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
-Wm_Mn <- mean(apply(Wm[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
 
+
+# NEW
+a_Mn <- mean(apply(a[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE) #mean a value over first 10 years
+Wm_Mn <- mean(apply(Wm[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE) #mean Wm value over first 10 years
+
+#plot mean abundance spectrum (log10(N) vs log10(W))
 ggplot(data.frame(x = c(Wm_Mn, 1e6)), aes(x)) +
   stat_function(fun = function(x)a_Mn*x^b) +
   scale_x_log10() +
