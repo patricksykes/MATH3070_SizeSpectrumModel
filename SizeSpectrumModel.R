@@ -187,7 +187,7 @@ b <- log10(Alpha)/log10(Beta)-0.75
 # Calculate intercept of abundance spectrum
 # We know that N = aw^b, so a = N/w^b
 # So we can calculate the intercept a if we know the slope B and a point on the line (Wm, N_Wm)
-a <- N_Wm/(Wm^b)
+a <- N_Wm/Wm^b
 # a = Intercept of size spectrum (log10(abundance) with log10(body size))
 # NOTE: It varies spatially
 
@@ -275,7 +275,6 @@ ggsave("Output/FishBiomassChange.png", dpi = 150)
 a_Mn <- mean(apply(a[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
 Wm_Mn <- mean(apply(Wm[,,First10yrs], MARGIN = c(1,2), FUN = mean, na.rm = TRUE), na.rm = TRUE)
 
-library(ggplot2)
 ggplot(data.frame(x = c(Wm_Mn, 1e6)), aes(x)) +
   stat_function(fun = function(x)a_Mn*x^b) +
   scale_x_log10() +
